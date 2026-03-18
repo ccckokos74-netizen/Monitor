@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitor Powietrza</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --panel: #111827;
+    --panel2: #151e2e;
+    --border: #1e2d45;
+    --accent: #00e5ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --warn: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 2rem 1.5rem;
+    background-image:
+      radial-gradient(ellipse at 20% 10%, rgba(0,229,255,0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(124,58,237,0.06) 0%, transparent 50%);
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  header .tag {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  header h1 {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: #fff;
+  }
+
+  header h1 span {
+    color: var(--accent);
+  }
+
+  .subtitle {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.6rem;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.2rem;
+    max-width: 960px;
+    margin: 0 auto 1.5rem;
+  }
+
+  .input-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.4rem;
+    position: relative;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .input-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px rgba(0,229,255,0.07);
+  }
+
+  .input-card .label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .input-card .label .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .dot-temp  { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
+  .dot-press { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+  .dot-oxy   { background: var(--accent3); box-shadow: 0 0 6px var(--accent3); }
+
+  .input-card input {
+    width: 100%;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    padding: 0.75rem 1rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .input-card input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,229,255,0.1);
+  }
+
+  .input-card input::placeholder {
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  .input-card .hint {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-top: 0.6rem;
+  }
+
+  .hint-vals {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .hint-val {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.25rem 0.6rem;
+    color: var(--muted);
+  }
+
+  .btn-row {
+    max-width: 960px;
+    margin: 0 auto 3rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .btn-add {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 10px;
+    font-family: var(--sans);
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    padding: 0.8rem 2rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-add:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(0,229,255,0.3);
+  }
+
+  .btn-add:active { transform: translateY(0); }
+
+  .btn-clear {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.8rem 1.4rem;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .btn-clear:hover { color: var(--text); border-color: var(--muted); }
+
+  .error-msg {
+    max-width: 960px;
+    margin: -1.5rem auto 1.5rem;
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: #fca5a5;
+    display: none;
+  }
+
+  /* TABLE */
+  .table-section {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .table-title {
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .table-title .count {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    background: rgba(0,229,255,0.1);
+    border: 1px solid rgba(0,229,255,0.2);
+    color: var(--accent);
+    border-radius: 20px;
+    padding: 0.2rem 0.6rem;
+  }
+
+  .table-wrap {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead tr {
+    background: var(--panel2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  thead th {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 1rem 1.2rem;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+    animation: rowIn 0.3s ease;
+  }
+
+  @keyframes rowIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(0,229,255,0.03); }
+
+  tbody td {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    padding: 0.95rem 1.2rem;
+    color: var(--text);
+  }
+
+  .td-date { color: var(--muted); font-size: 0.75rem; }
+  .td-time { color: var(--muted); font-size: 0.75rem; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 6px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.78rem;
+  }
+
+  .badge-temp  { background: rgba(245,158,11,0.1); color: var(--warn); }
+  .badge-press { background: rgba(124,58,237,0.1); color: #a78bfa; }
+  .badge-oxy   { background: rgba(16,185,129,0.1); color: var(--accent3); }
+
+  .empty-state {
+    text-align: center;
+    padding: 3.5rem 2rem;
+  }
+
+  .empty-state .icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+  }
+
+  .empty-state p {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .btn-del {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+  }
+  .btn-del:hover { color: #f87171; background: rgba(239,68,68,0.1); }
+
+  .flash {
+    animation: flash 0.4s ease;
+  }
+  @keyframes flash {
+    0%   { box-shadow: 0 0 0 0 rgba(0,229,255,0.5); }
+    50%  { box-shadow: 0 0 0 8px rgba(0,229,255,0); }
+    100% { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">// System monitoringu</div>
+  <h1>Monitor <span>Powietrza</span></h1>
+  <div class="subtitle">wprowadź 3 wartości po przecinku w każde pole</div>
+</header>
+
+<div class="form-grid">
+  <div class="input-card" id="card-temp">
+    <div class="label"><span class="dot dot-temp"></span> Temperatura</div>
+    <input type="text" id="inp-temp" placeholder="np. 21.5, 22.0, 21.8" autocomplete="off">
+    <div class="hint">Dowolna ilość pomiarów temperatury [°C]</div>
+    <div class="hint-vals" id="vals-temp"></div>
+  </div>
+
+  <div class="input-card" id="card-press">
+    <div class="label"><span class="dot dot-press"></span> Ciśnienie atmosferyczne</div>
+    <input type="text" id="inp-press" placeholder="np. 1013, 1014, 1012" autocomplete="off">
+    <div class="hint">Dowolna ilość pomiarów ciśnienia [hPa]</div>
+    <div class="hint-vals" id="vals-press"></div>
+  </div>
+
+  <div class="input-card" id="card-oxy">
+    <div class="label"><span class="dot dot-oxy"></span> Stężenie tlenu</div>
+    <input type="text" id="inp-oxy" placeholder="np. 20.9, 21.0, 20.8" autocomplete="off">
+    <div class="hint">Dowolna ilość pomiarów tlenu [%]</div>
+    <div class="hint-vals" id="vals-oxy"></div>
+  </div>
+</div>
+
+<div class="error-msg" id="error-msg"></div>
+
+<div class="btn-row">
+
+  <button class="btn-add" onclick="addRecord()">
+    <span>＋</span> Dodaj odczyt
+  </button>
+</div>
+
+<div class="table-section">
+  <div class="table-header">
+    <div class="table-title">
+      Historia odczytów
+      <span class="count" id="count">0 wpisów</span>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Godz.</th>
+          <th>Temperatura</th>
+          <th>Ciśnienie</th>
+          <th>Tlen</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="empty-state" id="empty">
+      <div class="icon">🌬️</div>
+      <p>Brak odczytów — dodaj pierwszy pomiar powyżej</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  let records = [];
+
+  function parseAny(str, label) {
+    const parts = str.split(',').map(s => s.trim()).filter(Boolean);
+    if (parts.length < 1) throw new Error(`Pole „${label}" musi zawierać przynajmniej jedną wartość.`);
+    const nums = parts.map(p => {
+      const n = parseFloat(p.replace(',', '.'));
+      if (isNaN(n)) throw new Error(`Nieprawidłowa wartość „${p}" w polu „${label}".`);
+      return n;
+    });
+    return nums;
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 4000);
+  }
+
+  function previewVals(inputId, valsId) {
+    const val = document.getElementById(inputId).value;
+    const container = document.getElementById(valsId);
+    const parts = val.split(',').map(s => s.trim()).filter(Boolean);
+    container.innerHTML = parts.map((p, i) => `<span class="hint-val">#${i+1}: ${p}</span>`).join('');
+  }
+
+  document.getElementById('inp-temp').addEventListener('input', () => previewVals('inp-temp', 'vals-temp'));
+  document.getElementById('inp-press').addEventListener('input', () => previewVals('inp-press', 'vals-press'));
+  document.getElementById('inp-oxy').addEventListener('input', () => previewVals('inp-oxy', 'vals-oxy'));
+
+  function addRecord() {
+    try {
+      const tempVal  = document.getElementById('inp-temp').value.trim();
+      const pressVal = document.getElementById('inp-press').value.trim();
+      const oxyVal   = document.getElementById('inp-oxy').value.trim();
+
+      const empty = [];
+      if (!tempVal)  empty.push('Temperatura');
+      if (!pressVal) empty.push('Ciśnienie atmosferyczne');
+      if (!oxyVal)   empty.push('Stężenie tlenu');
+
+      if (empty.length > 0) {
+        showError('⚠️ Wypełnij wszystkie okienka przed dodaniem odczytu: ' + empty.join(', ') + '.');
+        return;
+      }
+
+      const temps = parseAny(tempVal, 'Temperatura');
+      const press = parseAny(pressVal, 'Ciśnienie');
+      const oxy   = parseAny(oxyVal, 'Tlen');
+
+      const now = new Date();
+      const date = now.toLocaleDateString('pl-PL');
+      const time = now.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      const ri = () => Math.floor(Math.random() * 3);
+      records.unshift({ date, time, temps, press, oxy });
+      renderTable();
+
+      // flash table
+      document.querySelector('.table-wrap').classList.remove('flash');
+      void document.querySelector('.table-wrap').offsetWidth;
+      document.querySelector('.table-wrap').classList.add('flash');
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  function clearHistory() {
+    if (records.length === 0) return;
+    if (confirm('Czy na pewno chcesz usunąć całą historię odczytów?')) {
+      records = [];
+      renderTable();
+    }
+  }
+
+  function clearForm() {
+    ['inp-temp','inp-press','inp-oxy'].forEach(id => {
+      const el = document.getElementById(id);
+      el.value = '';
+      el.dispatchEvent(new Event('input'));
+    });
+    ['vals-temp','vals-press','vals-oxy'].forEach(id => {
+      document.getElementById(id).innerHTML = '';
+    });
+  }
+
+  function deleteRecord(i) {
+    records.splice(i, 1);
+    renderTable();
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('tbody');
+    const empty = document.getElementById('empty');
+    const count = document.getElementById('count');
+
+    count.textContent = records.length + (records.length === 1 ? ' wpis' : records.length < 5 ? ' wpisy' : ' wpisów');
+
+    if (records.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    tbody.innerHTML = records.map((r, i) => {
+      const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+      const randTemp  = pick(r.temps);
+      const randPress = pick(r.press);
+      const randOxy   = pick(r.oxy);
+      return `
+      <tr>
+        <td class="td-date">${r.date}</td>
+        <td class="td-time">${r.time}</td>
+        <td><span class="badge badge-temp">${randTemp} °C</span></td>
+        <td><span class="badge badge-press">${randPress} hPa</span></td>
+        <td><span class="badge badge-oxy">${randOxy} %</span></td>
+        <td><button class="btn-del" onclick="deleteRecord(${i})" title="Usuń">✕</button></td>
+      </tr>
+    `}).join('');
+  }
+
+  renderTable();
+  setInterval(renderTable, 3000);
+</script>
+</body>
+</html>
